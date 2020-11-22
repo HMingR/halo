@@ -34,4 +34,6 @@ public class StatisticDTO {
     private Long visitCount;
 
     private Long likeCount;
+
+    private Integer lastLoginReadTimes;
 }

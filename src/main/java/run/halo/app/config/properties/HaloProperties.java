@@ -94,4 +94,7 @@ public class HaloProperties {
     private String hazelcastGroupName;
 
     private int initialBackoffSeconds = 5;
+
+
+    private boolean isCluster;
 }

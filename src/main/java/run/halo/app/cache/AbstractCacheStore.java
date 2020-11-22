@@ -51,7 +51,6 @@ public abstract class AbstractCacheStore<K, V> implements CacheStore<K, V> {
     @Override
     public Optional<V> get(K key) {
         Assert.notNull(key, "Cache key must not be blank");
-
         return getInternal(key).map(cacheWrapper -> {
             // Check expiration
             if (cacheWrapper.getExpireAt() != null && cacheWrapper.getExpireAt().before(run.halo.app.utils.DateUtils.now())) {

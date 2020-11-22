@@ -1,7 +1,11 @@
 package run.halo.app.cache;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import run.halo.app.utils.DateUtils;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -87,5 +91,32 @@ class CacheStoreTest {
 
         // Assertion
         assertFalse(valueOptional.isPresent());
+    }
+
+    @Test
+    public void testJson2Object() throws JsonProcessingException {
+        CacheWrapper<Integer> original = new CacheWrapper<>();
+        original.setExpireAt(DateUtils.now());
+        original.setCreateAt(DateUtils.now());
+        original.setData(1);
+        ObjectMapper objectMapper = new ObjectMapper();
+        String s = objectMapper.writeValueAsString(original);
+        System.out.println(s);
+        CacheWrapper cacheWrapper = objectMapper.readValue(s, CacheWrapper.class);
+        System.out.println(cacheWrapper);
+    }
+
+    @Test
+    public void test(){
+        ArrayList<Integer> integers = new ArrayList<>();
+        integers.add(1000);
+        integers.add(7000);
+        integers.add(5000);
+        integers.add(4000);
+        integers.add(13000);
+        for (Integer item : integers){
+            item = item / 1000;
+        }
+        System.out.println(integers);
     }
 }

@@ -147,6 +147,11 @@ public class HaloConst {
     public static final String UNKNOWN_VERSION = "unknown";
 
     /**
+     * last login reading article times
+     **/
+    public static final String LAST_LOGIN_READ_TIMES = "halo::last::login::read::times";
+
+    /**
      * Database product name.
      */
     public static String DATABASE_PRODUCT_NAME = null;
@@ -159,4 +164,33 @@ public class HaloConst {
         // Set version
         HALO_VERSION = Optional.ofNullable(HaloConst.class.getPackage().getImplementationVersion()).orElse(UNKNOWN_VERSION);
     }
+
+
+    public final static String WEEK_READ_TREND_CACHE_KEY = "week_read_trend_cache_key";
+    public final static String MONTH_READ_TREND_CACHE_KEY = "month_read_trend_cache_key";
+
+
+    public final static String WEEK_TREND_TYPE = "WEEK";
+
+    public final static String MONTH_TREND_TYPE = "MONTH";
+
+    /**
+     * the key of every day reading times in redis
+     **/
+    public final static String EVERY_DAY_READ_TIMES_REDIS_KEY = "halo::everyDay::readTimes::list::key";
+
+    /**
+     * the key of every month reading times in redis
+     **/
+    public final static String EVERY_WEEK_READ_TIMES_REDIS_KEY = "halo::everyWeek::readTimes::list::key";
+
+    /**
+     * the key to record yesterday all article reading times
+     **/
+    public final static String YESTERDAY_READ_TIMES_REDIS_KEY = "halo::yesterday::readTimes::key";
+
+    /**
+     * the key to record last month all article reading times
+     **/
+    public final static String LAST_MONTH_READ_TIMES_REDIS_KEY = "halo::lastMonth::readTimes::key";
 }

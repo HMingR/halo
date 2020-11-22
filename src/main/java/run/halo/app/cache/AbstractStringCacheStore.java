@@ -1,7 +1,9 @@
 package run.halo.app.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 import run.halo.app.exception.ServiceException;
@@ -19,13 +21,16 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public abstract class AbstractStringCacheStore extends AbstractCacheStore<String, String> {
 
+    @Autowired
+    ObjectMapper objectMapper;
+
     protected Optional<CacheWrapper<String>> jsonToCacheWrapper(String json) {
         Assert.hasText(json, "json value must not be null");
         CacheWrapper<String> cacheWrapper = null;
         try {
             cacheWrapper = JsonUtils.jsonToObject(json, CacheWrapper.class);
         } catch (IOException e) {
-            log.debug("Failed to convert json to wrapper value bytes: [{}]", json, e);
+            log.error("Failed to convert json to wrapper value bytes: [{}]", json, e);
         }
         return Optional.ofNullable(cacheWrapper);
     }
@@ -51,6 +56,7 @@ public abstract class AbstractStringCacheStore extends AbstractCacheStore<String
 
         return get(key).map(value -> {
             try {
+                log.info("getAny:--{}---{}", value, type);
                 return JsonUtils.jsonToObject(value, type);
             } catch (IOException e) {
                 log.error("Failed to convert json to type: " + type.getName(), e);

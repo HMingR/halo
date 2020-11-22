@@ -1,6 +1,8 @@
 package run.halo.app.service.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import run.halo.app.cache.AbstractStringCacheStore;
 import run.halo.app.exception.ServiceException;
 import run.halo.app.model.dto.StatisticDTO;
 import run.halo.app.model.dto.StatisticWithUserDTO;
@@ -8,7 +10,10 @@ import run.halo.app.model.dto.UserDTO;
 import run.halo.app.model.entity.User;
 import run.halo.app.model.enums.CommentStatus;
 import run.halo.app.model.enums.PostStatus;
+import run.halo.app.model.support.HaloConst;
 import run.halo.app.service.*;
+
+import java.util.Optional;
 
 /**
  * Statistic service implementation.
@@ -41,6 +46,8 @@ public class StatisticServiceImpl implements StatisticService {
 
     private final UserService userService;
 
+    private final AbstractStringCacheStore cacheStore;
+
     public StatisticServiceImpl(PostService postService,
             SheetService sheetService,
             JournalService journalService,
@@ -51,7 +58,8 @@ public class StatisticServiceImpl implements StatisticService {
             LinkService linkService,
             CategoryService categoryService,
             TagService tagService,
-            UserService userService) {
+            UserService userService,
+            AbstractStringCacheStore cacheStore) {
         this.postService = postService;
         this.sheetService = sheetService;
         this.journalService = journalService;
@@ -63,6 +71,7 @@ public class StatisticServiceImpl implements StatisticService {
         this.categoryService = categoryService;
         this.tagService = tagService;
         this.userService = userService;
+        this.cacheStore = cacheStore;
     }
 
     @Override
@@ -88,6 +97,19 @@ public class StatisticServiceImpl implements StatisticService {
         statisticDTO.setLinkCount(linkService.count());
         statisticDTO.setVisitCount(postService.countVisit() + sheetService.countVisit());
         statisticDTO.setLikeCount(postService.countLike() + sheetService.countLike());
+
+        Integer lastReadTimes = 0;
+        Optional<String> s = cacheStore.get(HaloConst.LAST_LOGIN_READ_TIMES);
+        if(s.isPresent()){
+            String strTimes = s.get();
+            if(StringUtils.isNoneBlank(strTimes)){
+                lastReadTimes = Integer.parseInt(strTimes);
+                lastReadTimes = statisticDTO.getVisitCount().intValue() - lastReadTimes;
+            }
+        }
+        statisticDTO.setLastLoginReadTimes(lastReadTimes);
+
+        cacheStore.put(HaloConst.LAST_LOGIN_READ_TIMES, String.valueOf(statisticDTO.getVisitCount()));
         return statisticDTO;
     }
 

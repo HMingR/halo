@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.web.client.RestTemplate;
 import run.halo.app.cache.*;
 import run.halo.app.config.properties.HaloProperties;
+import run.halo.app.task.RecordReadTimesTrendTask;
 import run.halo.app.utils.HttpClientUtils;
 
 import java.security.KeyManagementException;
@@ -56,7 +58,12 @@ public class HaloConfiguration {
                 stringCacheStore = new LevelCacheStore(this.haloProperties);
                 break;
             case "redis":
-                stringCacheStore = new RedisCacheStore(this.haloProperties);
+                if(haloProperties.isCluster()){
+                    stringCacheStore = new ClusterRedisCacheStore(this.haloProperties);
+                }else{
+
+                    stringCacheStore = new RedisCacheStore(this.haloProperties);
+                }
                 break;
             case "memory":
             default:
@@ -67,5 +74,12 @@ public class HaloConfiguration {
         log.info("Halo cache store load impl : [{}]", stringCacheStore.getClass());
         return stringCacheStore;
 
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "halo.cache", havingValue = "redis")
+    public RecordReadTimesTrendTask recordReadTimesTrendTask(){
+        log.info("~~~~~~~~~~~~start record read times task~~~~~~~~~~~~~");
+        return new RecordReadTimesTrendTask();
     }
 }

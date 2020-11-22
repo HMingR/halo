@@ -5,7 +5,10 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import run.halo.app.exception.ServiceException;
 import run.halo.app.mail.MailService;
 import run.halo.app.model.dto.EnvironmentDTO;
 import run.halo.app.model.dto.LoginPreCheckDTO;
+import run.halo.app.model.dto.ReadTrendDto;
 import run.halo.app.model.dto.StatisticDTO;
 import run.halo.app.model.entity.User;
 import run.halo.app.model.enums.CommentStatus;
@@ -30,6 +34,7 @@ import run.halo.app.model.params.LoginParam;
 import run.halo.app.model.params.ResetPasswordParam;
 import run.halo.app.model.properties.EmailProperties;
 import run.halo.app.model.support.HaloConst;
+import run.halo.app.model.vo.ReadTimesTrendVO;
 import run.halo.app.security.authentication.Authentication;
 import run.halo.app.security.context.SecurityContextHolder;
 import run.halo.app.security.token.AuthToken;
@@ -46,10 +51,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -540,4 +542,62 @@ public class AdminServiceImpl implements AdminService {
         }
         return new LoginPreCheckDTO(useMFA);
     }
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Override
+    public ReadTimesTrendVO getReadTrend(Integer type){
+        String cacheKey = "";
+        Integer range = 0;
+        cacheKey = HaloConst.EVERY_DAY_READ_TIMES_REDIS_KEY;
+        if(type < 2) {
+            if(type == 0) range = 6;
+            else range = 29;
+        }
+        else {
+            cacheKey = HaloConst.EVERY_WEEK_READ_TIMES_REDIS_KEY;
+            if(type == 3) range = 5;
+            else range = 11;
+        }
+        List res = redisTemplate.opsForList().range(cacheKey, 0, range);
+        ReadTimesTrendVO trendVO = convertReadTrendDto2String(res);
+        return trendVO;
+    }
+
+
+    private ReadTimesTrendVO convertReadTrendDto2String(List<ReadTrendDto> readTrendDtos){
+        ReadTimesTrendVO res = new ReadTimesTrendVO();
+        if(readTrendDtos == null || readTrendDtos.isEmpty()) return res;
+        ArrayList<String> x = new ArrayList<>();
+        ArrayList<Integer> y = new ArrayList<>();
+
+        String pattern = "MM-dd";
+        int max = 1;
+        String unit = "次";
+        for (ReadTrendDto item : readTrendDtos){
+            String s = DateUtils.formatDate(new Date(item.getDate()), pattern);
+            int i = item.getTimes();
+            y.add(i);
+            x.add(s);
+            max = Math.max(max, i);
+        }
+        if(max > 3000){
+            ArrayList<Integer> newY = new ArrayList<>(y.size());
+            for (Integer item : y){
+                item = item / 1000;
+                newY.add(item);
+            }
+            y = newY;
+            unit = "k次";
+        }
+        res.setInterval(max / 15 + 1);
+        res.setX(x);
+        res.setY(y);
+        res.setMax(max);
+        res.setUnit(unit);
+        return res;
+    }
+
+
 }

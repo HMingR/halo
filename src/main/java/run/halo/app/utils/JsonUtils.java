@@ -2,7 +2,6 @@ package run.halo.app.utils;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import org.springframework.lang.NonNull;
@@ -35,7 +34,9 @@ public class JsonUtils {
      * @return object mapper
      */
     public static ObjectMapper createDefaultJsonMapper() {
-        return createDefaultJsonMapper(null);
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper;
+//        return createDefaultJsonMapper(null);
     }
 
     /**
@@ -49,11 +50,11 @@ public class JsonUtils {
         // Create object mapper
         ObjectMapper mapper = new ObjectMapper();
         // Configure
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        /*mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // Set property naming strategy
         if (strategy != null) {
             mapper.setPropertyNamingStrategy(strategy);
-        }
+        }*/
         return mapper;
     }
 
@@ -146,7 +147,6 @@ public class JsonUtils {
     public static String objectToJson(@NonNull Object source, @NonNull ObjectMapper objectMapper) throws JsonProcessingException {
         Assert.notNull(source, "Source object must not be null");
         Assert.notNull(objectMapper, "Object mapper must not null");
-
         return objectMapper.writeValueAsString(source);
     }
 

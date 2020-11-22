@@ -1,128 +1,77 @@
 package run.halo.app.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPoolConfig;
 import run.halo.app.config.properties.HaloProperties;
+import run.halo.app.utils.DateUtils;
 import run.halo.app.utils.JsonUtils;
 
-import javax.annotation.PreDestroy;
+import java.time.Duration;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Redis cache store.
- *
- * @author chaos
- */
-@Slf4j
-public class RedisCacheStore extends AbstractStringCacheStore {
-    /**
-     * Cache container.
-     */
-    private final static ConcurrentHashMap<String, CacheWrapper<String>> CACHE_CONTAINER = new ConcurrentHashMap<>();
+ * @ClassName RedisCacheStore
+ * @Description not a cluster redis cache store
+ * @Author huangmingren
+ * @Date 2020/11/8 16:41
+ **/
+public class RedisCacheStore extends AbstractStringCacheStore{
 
-    private volatile static JedisCluster REDIS;
+    private static final Logger log = LoggerFactory.getLogger(RedisCacheStore.class);
 
-    /**
-     * Lock.
-     */
-    private final Lock lock = new ReentrantLock();
+    @Autowired
+    private RedisTemplate redisTemplate;
 
-    public RedisCacheStore(HaloProperties haloProperties) {
+
+    public RedisCacheStore(HaloProperties haloProperties){
         this.haloProperties = haloProperties;
-        initRedis();
     }
 
-    private void initRedis() {
-        JedisPoolConfig cfg = new JedisPoolConfig();
-        cfg.setMaxIdle(2);
-        cfg.setMaxTotal(30);
-        cfg.setMaxWaitMillis(5000);
-        Set<HostAndPort> nodes = new HashSet<>();
-        for (String hostPort : this.haloProperties.getCacheRedisNodes()) {
-            String[] temp = hostPort.split(":");
-            if (temp.length > 0) {
-                String host = temp[0];
-                int port = 6379;
-                if (temp.length > 1) {
-                    try {
-                        port = Integer.parseInt(temp[1]);
-                    } catch (Exception ex) {
-
-                    }
-                }
-                nodes.add(new HostAndPort(host, port));
-            }
-        }
-        if (nodes.isEmpty()) {
-            nodes.add(new HostAndPort("127.0.0.1", 6379));
-        }
-        REDIS = new JedisCluster(nodes, 5, 20, 3, this.haloProperties.getCacheRedisPassword(), cfg);
-        log.info("Initialized cache redis cluster: {}", REDIS.getClusterNodes());
-    }
-
-    @NotNull
     @Override
-    Optional<CacheWrapper<String>> getInternal(@NotNull String key) {
+    Optional<CacheWrapper<String>> getInternal(String key) {
         Assert.hasText(key, "Cache key must not be blank");
-        String v = REDIS.get(key);
-        return StringUtils.isEmpty(v) ? Optional.empty() : jsonToCacheWrapper(v);
+        Object v = redisTemplate.opsForValue().get(key);
+        return StringUtils.isEmpty(v) ? Optional.empty() : jsonToCacheWrapper(String.valueOf(v));
     }
 
     @Override
-    void putInternal(@NotNull String key, @NotNull CacheWrapper<String> cacheWrapper) {
+    void putInternal(String key, CacheWrapper<String> cacheWrapper) {
         putInternalIfAbsent(key, cacheWrapper);
-        try {
-            REDIS.set(key, JsonUtils.objectToJson(cacheWrapper));
-            Date ttl = cacheWrapper.getExpireAt();
-            if (ttl != null) {
-                REDIS.pexpireAt(key, ttl.getTime());
-            }
-        } catch (Exception e) {
-            log.warn("Put cache fail json2object key: [{}] value:[{}]", key, cacheWrapper);
-        }
+//        try {
+//            Date expireAt = cacheWrapper.getExpireAt();
+//            Date createAt = cacheWrapper.getCreateAt();
+//            redisTemplate.opsForValue().set(key, cacheWrapper.getData(), DateUtils.subduction(expireAt, createAt), TimeUnit.MILLISECONDS);
+//        } catch (Exception e) {
+//            log.error("Put cache fail json2object key: [{}] value:[{}]", key, cacheWrapper);
+//            e.printStackTrace();
+//        }
     }
 
     @Override
-    Boolean putInternalIfAbsent(@NotNull String key, @NotNull CacheWrapper<String> cacheWrapper) {
+    Boolean putInternalIfAbsent(String key, CacheWrapper<String> cacheWrapper) {
         Assert.hasText(key, "Cache key must not be blank");
         Assert.notNull(cacheWrapper, "Cache wrapper must not be null");
+        Date createAt = cacheWrapper.getCreateAt();
+        Date ttl = cacheWrapper.getExpireAt();
         try {
-            if (REDIS.setnx(key, JsonUtils.objectToJson(cacheWrapper)) <= 0) {
-                log.warn("Failed to put the cache, because the key: [{}] has been present already", key);
-                return false;
-            }
-            Date ttl = cacheWrapper.getExpireAt();
-            if (ttl != null) {
-                REDIS.pexpireAt(key, ttl.getTime());
-            }
-            return true;
+            redisTemplate.opsForValue().set(key, JsonUtils.objectToJson(cacheWrapper));
         } catch (JsonProcessingException e) {
-            log.warn("Put cache fail json2object key: [{}] value:[{}]", key, cacheWrapper);
+            e.printStackTrace();
         }
-        log.debug("Cache key: [{}], original cache wrapper: [{}]", key, cacheWrapper);
-        return false;
+        if (ttl != null && createAt != null) {
+            redisTemplate.expire(key, Duration.ofMillis(DateUtils.subduction(createAt, ttl)));
+        }
+        return true;
     }
 
     @Override
-    public void delete(@NotNull String key) {
-        Assert.hasText(key, "Cache key must not be blank");
-        REDIS.del(key);
-        log.debug("Removed key: [{}]", key);
-    }
-
-    @PreDestroy
-    public void preDestroy() {
+    public void delete(String key) {
+        redisTemplate.delete(key);
     }
 }

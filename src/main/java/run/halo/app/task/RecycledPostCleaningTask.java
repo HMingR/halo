@@ -79,4 +79,6 @@ public class RecycledPostCleaningTask {
         log.info("Recycled posts cleaning has been completed, {} posts has been permanently deleted", posts.size());
     }
 
+
+
 }

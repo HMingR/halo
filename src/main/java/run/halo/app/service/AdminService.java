@@ -7,6 +7,7 @@ import run.halo.app.model.dto.StatisticDTO;
 import run.halo.app.model.entity.User;
 import run.halo.app.model.params.LoginParam;
 import run.halo.app.model.params.ResetPasswordParam;
+import run.halo.app.model.vo.ReadTimesTrendVO;
 import run.halo.app.security.token.AuthToken;
 
 /**
@@ -110,4 +111,13 @@ public interface AdminService {
      * @return LoginEnvDTO
      */
     LoginPreCheckDTO getUserEnv(@NonNull String username);
+
+    /**
+     * @Author huangmingren
+     * @Description Get all articles reading times by type from redis, the type must in [0, 1, 2, 3, 4]
+     * @Date 2020/11/8 11:57
+     * @Param [type]
+     * @Return java.util.List<run.halo.app.model.dto.ReadTrendDto>
+     **/
+    ReadTimesTrendVO getReadTrend(Integer type);
 }

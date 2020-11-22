@@ -2,7 +2,9 @@ package run.halo.app.cache;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import run.halo.app.model.dto.ReadTrendDto;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -93,5 +95,35 @@ class InMemoryCacheStoreTest {
 
         // Assertion
         assertFalse(valueOptional.isPresent());
+    }
+
+    @Test
+    public void JsonArray(){
+        ArrayList<ReadTrendDto> readTrendDtos = new ArrayList<>();
+        ReadTrendDto readTrendDto1 = new ReadTrendDto();
+        readTrendDto1.setTimes(2);
+        readTrendDto1.setDate(System.currentTimeMillis());
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        readTrendDtos.add(readTrendDto1);
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        int size = readTrendDtos.size();
+
+        int index = 0;
+        System.out.println(size + "-----" + index);
+        for (ReadTrendDto readTrendDto : readTrendDtos){
+            sb.append("[").append(readTrendDto.getTimes()).append(",").append(readTrendDto.getTimes()).append("]");
+            if(index++ == size - 1) continue;
+            sb.append(",");
+//            index++;
+        }
+        sb.append("]");
+        System.out.println(sb.toString());
     }
 }

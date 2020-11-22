@@ -4,6 +4,8 @@ server:
   compression:
     enabled: false
 spring:
+  profiles:
+    active: user
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
   devtools:
@@ -52,4 +54,5 @@ logging:
 
 halo:
   download-timeout: 5m
-  cache: memory
+  cache: redis
+

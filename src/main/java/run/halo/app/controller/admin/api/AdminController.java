@@ -1,5 +1,6 @@
 package run.halo.app.controller.admin.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import run.halo.app.model.params.LoginParam;
 import run.halo.app.model.params.ResetPasswordParam;
 import run.halo.app.model.properties.PrimaryProperties;
 import run.halo.app.model.support.BaseResponse;
+import run.halo.app.model.vo.ReadTimesTrendVO;
 import run.halo.app.security.token.AuthToken;
 import run.halo.app.service.AdminService;
 import run.halo.app.service.OptionService;
@@ -118,5 +120,11 @@ public class AdminController {
     @DisableOnCondition
     public BaseResponse<String> getLogFiles(@RequestParam("lines") Long lines) {
         return BaseResponse.ok(HttpStatus.OK.getReasonPhrase(), adminService.getLogFiles(lines));
+    }
+
+    @ApiOperation("get reading times trend by type, the type must be in [0, 1, 2, 3]")
+    @GetMapping("/read/trend/{type}")
+    public BaseResponse<ReadTimesTrendVO> getReadTrendDtoByType(@PathVariable("type") Integer type) throws JsonProcessingException {
+        return BaseResponse.ok(HttpStatus.OK.getReasonPhrase(), adminService.getReadTrend(type));
     }
 }
