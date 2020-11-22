@@ -69,6 +69,7 @@ ext {
     githubApiVersion = "1.84"
     powermockVersion = "1.6.6"
     powermockApiMockito2 = "2.0.7"
+
 }
 
 dependencies {
@@ -79,6 +80,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-jetty"
     implementation "org.springframework.boot:spring-boot-starter-freemarker"
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     implementation "com.sun.mail:jakarta.mail"
     implementation "cn.hutool:hutool-core:$hutoolVersion"
